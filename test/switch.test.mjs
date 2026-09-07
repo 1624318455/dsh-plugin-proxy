@@ -4,7 +4,7 @@ import http from 'node:http';
 import net from 'node:net';
 import { EnvHttpProxyAgent, Socks5ProxyAgent, getGlobalDispatcher } from 'undici';
 
-import { matchesNoProxy, buildDispatcher, createEngine } from '../lib/index.js';
+import { matchesNoProxy, buildDispatcher, createEngine, PROXY_ENV_KEYS } from '../lib/index.js';
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -236,7 +236,7 @@ test('env export follows the switch and never clobbers operator values', async (
 		await close(origin.server);
 	});
 
-	const keys = ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy'];
+	const keys = PROXY_ENV_KEYS;
 	const saved = {};
 	for (const key of keys) {
 		saved[key] = process.env[key];

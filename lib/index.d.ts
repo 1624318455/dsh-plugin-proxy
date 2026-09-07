@@ -23,6 +23,9 @@ export interface SwitchEngine {
 export const name: string;
 export const inject: string[];
 export const PROXY_SETTINGS_NAMESPACE: 'dsh-proxy';
+export const PROXY_ONLY_ENV_KEYS: string[];
+export const NO_PROXY_ENV_KEYS: string[];
+export const PROXY_ENV_KEYS: string[];
 export const Config: unknown;
 
 export function matchesNoProxy(hostname: string, port: string | null, rules: string[]): boolean;
