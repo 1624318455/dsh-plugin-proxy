@@ -2,9 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import net from 'node:net';
-import { EnvHttpProxyAgent, Socks5ProxyAgent, getGlobalDispatcher } from 'undici';
+import { Agent, EnvHttpProxyAgent, Socks5ProxyAgent, getGlobalDispatcher } from 'undici';
 
-import { matchesNoProxy, buildDispatcher, createEngine, PROXY_ENV_KEYS } from '../lib/index.js';
+import {
+	matchesNoProxy,
+	buildDispatcher,
+	buildSystemDispatcher,
+	parseScutilProxy,
+	detectSystemProxy,
+	parseNoProxyList,
+	resolveMode,
+	resolveConfig,
+	createEngine,
+	PROXY_ENV_KEYS
+} from '../lib/index.js';
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -152,6 +163,175 @@ test('buildDispatcher picks the right agent per protocol', () => {
 	assert.ok(buildDispatcher({ enabled: true, proxy: 'socks://127.0.0.1:1080' }) instanceof Socks5ProxyAgent);
 	// unsupported protocol rejects
 	assert.throws(() => buildDispatcher({ enabled: true, proxy: 'ftp://127.0.0.1:21' }), /unsupported proxy protocol/);
+});
+
+/* ------------------------------------------------- unit: mode resolution */
+
+test('resolveMode maps the deprecated enabled flag onto direct/manual', () => {
+	assert.equal(resolveMode({ enabled: false }), 'direct');
+	assert.equal(resolveMode({ enabled: true }), 'manual');
+	// an explicit mode always wins over the deprecated flag
+	assert.equal(resolveMode({ mode: 'direct', enabled: true }), 'direct');
+	assert.equal(resolveMode({ mode: 'system', enabled: true }), 'system');
+	assert.equal(resolveMode({ mode: 'manual', enabled: false }), 'manual');
+	assert.equal(resolveMode({}), 'direct');
+});
+
+test('resolveConfig normalizes raw sections into the effective config', () => {
+	assert.deepEqual(resolveConfig({ enabled: true, proxy: 'http://p' }), {
+		mode: 'manual',
+		proxy: 'http://p',
+		noProxy: [],
+		exportEnv: true
+	});
+	assert.equal(resolveConfig({ mode: 'system' }).mode, 'system');
+	assert.deepEqual(resolveConfig({ mode: 'system' }).noProxy, []);
+	assert.equal(resolveConfig({ mode: 'manual', exportEnv: false }).exportEnv, false);
+});
+
+/* ------------------------------------------- unit: system-proxy detection */
+
+test('parseNoProxyList splits a curl-style no_proxy value', () => {
+	assert.deepEqual(parseNoProxyList('localhost, .corp,  a.b:443 ,'), ['localhost', '.corp', 'a.b:443']);
+	assert.deepEqual(parseNoProxyList(''), []);
+	assert.deepEqual(parseNoProxyList(undefined), []);
+});
+
+test('parseScutilProxy reads HTTP/HTTPS/SOCKS and the exceptions list', () => {
+	const text = [
+		'<dictionary> {',
+		'  ExceptionsList : <array> {',
+		'    0 : 127.0.0.1',
+		'    1 : localhost',
+		'    2 : *.internal',
+		'  }',
+		'  HTTPEnable : 1',
+		'  HTTPPort : 7890',
+		'  HTTPProxy : 127.0.0.1',
+		'  HTTPSEnable : 1',
+		'  HTTPSPort : 7890',
+		'  HTTPSProxy : 127.0.0.1',
+		'  SOCKSEnable : 0',
+		'  ProxyAutoConfigEnable : 0',
+		'}'
+	].join('\n');
+
+	const spec = parseScutilProxy(text);
+	assert.equal(spec.httpProxy, 'http://127.0.0.1:7890');
+	assert.equal(spec.httpsProxy, 'http://127.0.0.1:7890');
+	assert.equal(spec.socksProxy, undefined);
+	assert.deepEqual(spec.noProxy, ['127.0.0.1', 'localhost', '*.internal']);
+	assert.equal(spec.pac, false);
+});
+
+test('parseScutilProxy reports PAC / auto-discovery without fabricating proxies', () => {
+	const pac = parseScutilProxy('<dictionary> {\n  ProxyAutoConfigEnable : 1\n  ProxyAutoConfigURLString : http://wpad.example/proxy.pac\n}');
+	assert.equal(pac.pac, true);
+	assert.equal(pac.httpProxy, undefined);
+	assert.equal(pac.httpsProxy, undefined);
+	assert.equal(pac.socksProxy, undefined);
+});
+
+test('parseScutilProxy handles SOCKS-only and missing exceptions', () => {
+	const text = [
+		'<dictionary> {',
+		'  HTTPEnable : 0',
+		'  HTTPSEnable : 0',
+		'  SOCKSEnable : 1',
+		'  SOCKSProxy : 127.0.0.1',
+		'  SOCKSPort : 1080',
+		'}'
+	].join('\n');
+	const spec = parseScutilProxy(text);
+	assert.equal(spec.socksProxy, 'socks5://127.0.0.1:1080');
+	assert.deepEqual(spec.noProxy, []);
+});
+
+test('detectSystemProxy follows env vars and returns null when none set', () => {
+	const spec = detectSystemProxy('linux', {
+		HTTP_PROXY: 'http://h:7890',
+		HTTPS_PROXY: 'http://h:7890',
+		NO_PROXY: 'localhost,.corp'
+	});
+	assert.equal(spec.httpProxy, 'http://h:7890');
+	assert.equal(spec.httpsProxy, 'http://h:7890');
+	assert.deepEqual(spec.noProxy, ['localhost', '.corp']);
+
+	// lowercase forms are honored too
+	const lower = detectSystemProxy('linux', { http_proxy: 'http://l:1' });
+	assert.equal(lower.httpProxy, 'http://l:1');
+	assert.equal(lower.httpsProxy, undefined);
+
+	assert.equal(detectSystemProxy('linux', {}), null);
+});
+
+/* ------------------------------------------------- unit: system dispatcher */
+
+test('buildSystemDispatcher picks the right agent per detected proxy', () => {
+	assert.ok(buildSystemDispatcher({ httpProxy: 'http://h:1', noProxy: [] }) instanceof EnvHttpProxyAgent);
+	assert.ok(buildSystemDispatcher({ httpsProxy: 'http://h:1', noProxy: [] }) instanceof EnvHttpProxyAgent);
+	assert.ok(buildSystemDispatcher({ socksProxy: 'socks5://h:1080', noProxy: [] }) instanceof Socks5ProxyAgent);
+	assert.ok(buildSystemDispatcher({ noProxy: [] }) instanceof Agent);
+
+	// any noProxy rule wraps the agent in the shared routing dispatcher
+	const wrapped = buildSystemDispatcher({ httpProxy: 'http://h:1', noProxy: ['localhost'] });
+	assert.equal(wrapped.constructor.kind, 'dsh-proxy');
+});
+
+/* ----------------------------------------------------------- e2e: modes */
+
+test('system mode follows the ambient HTTP_PROXY env without writing it', async (t) => {
+	const origin = await startOrigin();
+	const proxy = await startHttpProxy();
+	t.after(async () => {
+		await close(proxy.server);
+		await close(origin.server);
+	});
+
+	isolateProxyEnv(t);
+	process.env.HTTP_PROXY = proxy.url;
+	process.env.HTTPS_PROXY = proxy.url;
+
+	const engine = createEngine(null);
+	t.after(() => engine.restore());
+
+	engine.apply({ mode: 'system', exportEnv: true });
+	const body = await (await fetch(origin.url)).json();
+	assert.equal(body.via, 'origin');
+	assert.equal(proxy.seen.length, 1);
+
+	// system mode reads env, never exports over it
+	assert.equal(process.env.HTTP_PROXY, proxy.url);
+	assert.equal(process.env.HTTPS_PROXY, proxy.url);
+
+	// switching to direct must leave the ambient env untouched
+	engine.apply({ mode: 'direct' });
+	assert.equal(process.env.HTTP_PROXY, proxy.url, 'ambient env must survive direct mode');
+});
+
+test('system mode never mistakes its own manual export for the system proxy', async (t) => {
+	const origin = await startOrigin();
+	const manual = await startHttpProxy();
+	t.after(async () => {
+		await close(manual.server);
+		await close(origin.server);
+	});
+
+	isolateProxyEnv(t);
+
+	const engine = createEngine(null);
+	t.after(() => engine.restore());
+
+	engine.apply({ enabled: true, proxy: manual.url, exportEnv: true });
+	assert.equal(process.env.HTTP_PROXY, manual.url);
+
+	// switching to system restores the manual export first, so detection finds
+	// nothing and stays direct instead of re-routing through the manual proxy
+	engine.apply({ mode: 'system' });
+	assert.ok(!('HTTP_PROXY' in process.env), 'manual export must be cleared before the system read');
+	const body = await (await fetch(origin.url)).json();
+	assert.equal(body.via, 'origin');
+	assert.equal(manual.seen.length, 0, 'manual proxy must see no traffic after the switch');
 });
 
 /* ----------------------------------------------------------- e2e: runtime */
