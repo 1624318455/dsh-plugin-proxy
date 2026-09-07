@@ -2,10 +2,16 @@
 
 **English readme: [README.md](README.md)。**
 
+[![npm](https://img.shields.io/npm/v/@tr1v3r/dsh-proxy.svg)](https://www.npmjs.com/package/@tr1v3r/dsh-proxy)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+![演示：编辑 settings.yaml 即时改写全部出站路由](docs/assets/proxy-switch-demo.gif)
+
 `@tr1v3r/dsh-proxy` 是 DeepSeek Harness 插件，把进程内**所有出站请求**——
 LLM 提供方、`web_search` / `web_fetch`、streamable-http MCP——经由
 HTTP(S) CONNECT 或 SOCKS5 代理转发，并且支持**运行时随时开关、随时换代理**：
 只需编辑 `$DSH_HOME/settings.yaml` 的一个分节（watcher 热加载），全程零重启。
+上面的动图是真实录制，安装后可运行 `node scripts/demo.mjs` 复现。
 
 ## 工作原理
 

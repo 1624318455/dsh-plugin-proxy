@@ -2,11 +2,17 @@
 
 **中文说明见 [README.zh.md](README.zh.md)。**
 
+[![npm](https://img.shields.io/npm/v/@tr1v3r/dsh-proxy.svg)](https://www.npmjs.com/package/@tr1v3r/dsh-proxy)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+![demo: editing settings.yaml reroutes every outbound request instantly](docs/assets/proxy-switch-demo.gif)
+
 `@tr1v3r/dsh-proxy` is a DeepSeek Harness plugin that routes **every
 in-process outbound request** — LLM providers, `web_search` / `web_fetch`,
 streamable-http MCP — through an HTTP(S) CONNECT or SOCKS5 proxy, and lets
 you **flip the proxy on, off, or to another server at runtime**, with zero
 restarts, by editing one section of `$DSH_HOME/settings.yaml` (hot-reloaded).
+The demo above is a real recording: `node scripts/demo.mjs` after install.
 
 ## How it works
 
