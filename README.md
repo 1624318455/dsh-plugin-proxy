@@ -27,9 +27,12 @@ The plugin owns that slot:
   and SOCKS share identical matcher semantics (undici-style: bare entries
   match the host and dot-boundary subdomains; `host:port` pins a port; `*`
   bypasses everything; a leading dot or `*.` prefix is accepted as a synonym
-  of the bare entry). Ambient `NO_PROXY`/`HTTP_PROXY` env vars are
-  deliberately ignored by the dispatchers — exported env only steers child
-  processes, so in-process routing is fully determined by the settings section.
+  of the bare entry). In `manual` mode, ambient `NO_PROXY`/`HTTP_PROXY` env
+  vars are deliberately ignored by the dispatchers — exported env only steers
+  child processes, so in-process routing is fully determined by the settings
+  section. `system` mode is the opposite: it follows that ambient
+  configuration (and, on macOS, the System Settings proxy) instead of a URL
+  from settings.
 
 With `exportEnv: true` (default) the switch also exports
 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` into the dsh process, so
@@ -72,28 +75,46 @@ In the target profile directory (`~/.config/dsh/profiles/<name>/`):
 
 ## Use
 
-Edit `~/.config/dsh/settings.yaml` (hot-reloaded, no restart):
+Edit `~/.config/dsh/settings.yaml` (hot-reloaded, no restart). One `mode` key
+picks the routing strategy — `direct`, `system`, or `manual`:
 
 ```yaml
 dsh-proxy:
-  enabled: true                          # flip to false → instant direct routing
-  proxy: socks5://127.0.0.1:1080         # or http://127.0.0.1:7890, https://…,
+  mode: manual                           # direct | system | manual
+  proxy: socks5://127.0.0.1:1080         # manual only — http://…, https://…,
                                          # socks5://user:pass@host:1080, socks5h://…
-  noProxy:                               # optional bypass list
+  noProxy:                               # manual only — optional bypass list
     - localhost
     - .internal.example
     - registry.corp:443
-  exportEnv: true                        # also set HTTP(S)_PROXY for child processes
+  exportEnv: true                        # manual only — also set HTTP(S)_PROXY for children
+```
+
+| `mode` | behavior |
+| --- | --- |
+| `direct` | No proxy — everything goes out directly (same as the old `enabled: false`). |
+| `system` | Follow the host's proxy: `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` env vars everywhere, plus the macOS System Settings network-service proxy (`scutil --proxy`) when env is unset. `proxy`/`noProxy`/`exportEnv` are ignored. |
+| `manual` | Route through the `proxy` URL with the optional `noProxy` bypass list (same as the old `enabled: true`). |
+
+`enabled: true/false` still works as a deprecated alias for
+`manual`/`direct` when `mode` is omitted:
+
+```yaml
+dsh-proxy:
+  enabled: true                          # ≡ mode: manual
+  proxy: http://127.0.0.1:7890
 ```
 
 Every save re-routes immediately. The plugin logs each switch:
 
 ```
 dsh-proxy: routing global fetch via socks5://***@127.0.0.1:1080, noProxy 3 rule(s)
-dsh-proxy: direct (proxy off)
+dsh-proxy: following system proxy (http://127.0.0.1:7890, noProxy 3 rule(s))
+dsh-proxy: direct (mode: direct)
 ```
 
-(Userinfo in the proxy URL is redacted in logs.)
+(Userinfo in the proxy URL is redacted in logs. `system` mode follows the
+ambient env/OS proxy, so it never writes those env vars itself.)
 
 ## What is covered / not covered
 

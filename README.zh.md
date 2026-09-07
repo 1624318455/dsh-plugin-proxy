@@ -23,9 +23,10 @@ dispatcher 槽位（`Symbol.for('undici.globalDispatcher.1')`）。本插件接�
   `socks5h://` / `socks://` 自动归一；域名在代理端远程解析）
 - `noProxy` 规则 → 两条路径统一走 `RoutingDispatcher` 分流，HTTP 与 SOCKS
   语义完全一致（undici 风格：裸条目匹配主机及点边界子域；`host:port` 锁定
-  端口；`*` 全部直连；前导点 / `*.` 前缀视同裸条目等价写法）。dispatcher
-  刻意忽略环境变量里的 `NO_PROXY`/`HTTP_PROXY`——导出的 env 只引导子进程，
-  进程内路由完全由 settings 分节决定）
+  端口；`*` 全部直连；前导点 / `*.` 前缀视同裸条目等价写法）。`manual` 模式
+  下 dispatcher 刻意忽略环境变量里的 `NO_PROXY`/`HTTP_PROXY`——导出的 env
+  只引导子进程，进程内路由完全由 settings 分节决定；`system` 模式则相反，
+  正是跟随这些环境（以及 macOS 系统代理），而不是 settings 里的 URL）
 
 `exportEnv: true`（默认）时，切换还会同步导出
 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` 到 dsh 进程环境——切换后
@@ -64,28 +65,46 @@ dispatcher 槽位（`Symbol.for('undici.globalDispatcher.1')`）。本插件接�
 
 ## 使用
 
-编辑 `~/.config/dsh/settings.yaml`（热加载，立即生效）：
+编辑 `~/.config/dsh/settings.yaml`（热加载，立即生效）。一个 `mode` 键即可在
+三种模式间切换——`direct`（直连）、`system`（跟随系统）、`manual`（手动）：
 
 ```yaml
 dsh-proxy:
-  enabled: true                          # 改成 false → 立刻恢复直连
-  proxy: socks5://127.0.0.1:1080         # 或 http://127.0.0.1:7890、https://…、
+  mode: manual                           # direct | system | manual
+  proxy: socks5://127.0.0.1:1080         # 仅 manual——http://…、https://…、
                                          # socks5://user:pass@host:1080、socks5h://…
-  noProxy:                               # 可选分流规则
+  noProxy:                               # 仅 manual——可选分流规则
     - localhost
     - .internal.example
     - registry.corp:443
-  exportEnv: true                        # 同步设置子进程的 HTTP(S)_PROXY 环境变量
+  exportEnv: true                        # 仅 manual——同步设置子进程的 HTTP(S)_PROXY
+```
+
+| `mode` | 行为 |
+| --- | --- |
+| `direct` | 直连，不走任何代理（等价于旧的 `enabled: false`）。 |
+| `system` | 跟随主机代理：各平台读取 `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` 环境变量；环境变量缺失时，在 macOS 上再读取系统设置里的网络代理（`scutil --proxy`）。忽略 `proxy`/`noProxy`/`exportEnv`。 |
+| `manual` | 走 `proxy` URL，可用 `noProxy` 分流（等价于旧的 `enabled: true`）。 |
+
+`enabled: true/false` 仍作为旧写法兼容——未设置 `mode` 时分别映射到
+`manual`/`direct`：
+
+```yaml
+dsh-proxy:
+  enabled: true                          # ≡ mode: manual
+  proxy: http://127.0.0.1:7890
 ```
 
 每次保存立即重路由。插件会记录每次切换：
 
 ```
 dsh-proxy: routing global fetch via socks5://***@127.0.0.1:1080, noProxy 3 rule(s)
-dsh-proxy: direct (proxy off)
+dsh-proxy: following system proxy (http://127.0.0.1:7890, noProxy 3 rule(s))
+dsh-proxy: direct (mode: direct)
 ```
 
-（日志中代理 URL 的用户名密码会打码。）
+（日志中代理 URL 的用户名密码会打码。`system` 模式只读环境/系统代理，
+不会回写这些环境变量。）
 
 ## 覆盖范围
 
