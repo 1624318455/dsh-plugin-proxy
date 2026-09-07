@@ -26,7 +26,9 @@ dispatcher 槽位（`Symbol.for('undici.globalDispatcher.1')`）。本插件接�
   端口；`*` 全部直连；前导点 / `*.` 前缀视同裸条目等价写法）。`manual` 模式
   下 dispatcher 刻意忽略环境变量里的 `NO_PROXY`/`HTTP_PROXY`——导出的 env
   只引导子进程，进程内路由完全由 settings 分节决定；`system` 模式则相反，
-  正是跟随这些环境（以及 macOS 系统代理），而不是 settings 里的 URL）
+  跟随环境代理——`HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY`，环境变量
+  缺失时再回退到 macOS 系统设置里的网络代理（`scutil --proxy`）——每次分节
+  应用时重新探测一次，而非持续轮询）
 
 `exportEnv: true`（默认）时，切换还会同步导出
 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` 到 dsh 进程环境——切换后
@@ -83,7 +85,7 @@ dsh-proxy:
 | `mode` | 行为 |
 | --- | --- |
 | `direct` | 直连，不走任何代理（等价于旧的 `enabled: false`）。 |
-| `system` | 跟随主机代理：各平台读取 `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` 环境变量；环境变量缺失时，在 macOS 上再读取系统设置里的网络代理（`scutil --proxy`）。忽略 `proxy`/`noProxy`/`exportEnv`。 |
+| `system` | 跟随主机代理，每次分节应用时探测一次：读取 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` 环境变量；环境变量缺失时，在 macOS 上再读取系统设置里的网络代理（`scutil --proxy`）。是保存时探测、非持续轮询；Windows 注册表、Linux 桌面与 PAC 暂未覆盖。忽略 `proxy`/`noProxy`/`exportEnv`。 |
 | `manual` | 走 `proxy` URL，可用 `noProxy` 分流（等价于旧的 `enabled: true`）。 |
 
 `enabled: true/false` 仍作为旧写法兼容——未设置 `mode` 时分别映射到

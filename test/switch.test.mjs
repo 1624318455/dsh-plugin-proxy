@@ -236,7 +236,9 @@ test('parseScutilProxy handles SOCKS-only and missing exceptions', () => {
 	const text = [
 		'<dictionary> {',
 		'  HTTPEnable : 0',
+		'  HTTPPort : 9999',
 		'  HTTPSEnable : 0',
+		'  HTTPSPort : 9999',
 		'  SOCKSEnable : 1',
 		'  SOCKSProxy : 127.0.0.1',
 		'  SOCKSPort : 1080',
@@ -244,6 +246,9 @@ test('parseScutilProxy handles SOCKS-only and missing exceptions', () => {
 	].join('\n');
 	const spec = parseScutilProxy(text);
 	assert.equal(spec.socksProxy, 'socks5://127.0.0.1:1080');
+	// disabled protocols must not leak their stale port values
+	assert.equal(spec.httpProxy, undefined);
+	assert.equal(spec.httpsProxy, undefined);
 	assert.deepEqual(spec.noProxy, []);
 });
 
@@ -261,6 +266,19 @@ test('detectSystemProxy follows env vars and returns null when none set', () => 
 	const lower = detectSystemProxy('linux', { http_proxy: 'http://l:1' });
 	assert.equal(lower.httpProxy, 'http://l:1');
 	assert.equal(lower.httpsProxy, undefined);
+
+	// ALL_PROXY is the curl-style catch-all: http serves both legs, socks → SOCKS5
+	const allHttp = detectSystemProxy('linux', { ALL_PROXY: 'http://a:8080' });
+	assert.equal(allHttp.httpProxy, 'http://a:8080');
+	assert.equal(allHttp.httpsProxy, 'http://a:8080');
+
+	const allSocks = detectSystemProxy('linux', { all_proxy: 'socks5h://127.0.0.1:1080' });
+	assert.equal(allSocks.socksProxy, 'socks5://127.0.0.1:1080');
+
+	// per-protocol vars win over ALL_PROXY
+	const perProto = detectSystemProxy('linux', { HTTP_PROXY: 'http://h:1', ALL_PROXY: 'socks5://127.0.0.1:1080' });
+	assert.equal(perProto.httpProxy, 'http://h:1');
+	assert.equal(perProto.socksProxy, undefined);
 
 	assert.equal(detectSystemProxy('linux', {}), null);
 });

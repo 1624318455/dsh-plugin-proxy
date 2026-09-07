@@ -30,9 +30,10 @@ The plugin owns that slot:
   of the bare entry). In `manual` mode, ambient `NO_PROXY`/`HTTP_PROXY` env
   vars are deliberately ignored by the dispatchers — exported env only steers
   child processes, so in-process routing is fully determined by the settings
-  section. `system` mode is the opposite: it follows that ambient
-  configuration (and, on macOS, the System Settings proxy) instead of a URL
-  from settings.
+  section. `system` mode is the opposite: it follows the ambient proxy —
+  `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` env vars, falling back to
+  the macOS System Settings proxy (`scutil --proxy`) — re-detected each time
+  the section is applied, not continuously polled.
 
 With `exportEnv: true` (default) the switch also exports
 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` into the dsh process, so
@@ -93,7 +94,7 @@ dsh-proxy:
 | `mode` | behavior |
 | --- | --- |
 | `direct` | No proxy — everything goes out directly (same as the old `enabled: false`). |
-| `system` | Follow the host's proxy: `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` env vars everywhere, plus the macOS System Settings network-service proxy (`scutil --proxy`) when env is unset. `proxy`/`noProxy`/`exportEnv` are ignored. |
+| `system` | Follow the host's proxy, detected each time the section is applied: `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` env vars everywhere, falling back to the macOS System Settings network proxy (`scutil --proxy`) when env is unset. It re-detects on settings save, not continuously; Windows registry, Linux-desktop and PAC are not yet covered. `proxy`/`noProxy`/`exportEnv` are ignored. |
 | `manual` | Route through the `proxy` URL with the optional `noProxy` bypass list (same as the old `enabled: true`). |
 
 `enabled: true/false` still works as a deprecated alias for
