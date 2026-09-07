@@ -16,6 +16,21 @@ function close(server) {
 	return new Promise((resolve) => server.close(() => resolve()));
 }
 
+/** Remove proxy env keys for a test, restoring them in t.after. */
+function isolateProxyEnv(t) {
+	const saved = {};
+	for (const key of PROXY_ENV_KEYS) {
+		saved[key] = process.env[key];
+		delete process.env[key];
+	}
+	t.after(() => {
+		for (const [key, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[key];
+			else process.env[key] = value;
+		}
+	});
+}
+
 /** Plain origin server that echoes how the request reached it. */
 async function startOrigin() {
 	const server = http.createServer((req, res) => {
@@ -236,18 +251,7 @@ test('env export follows the switch and never clobbers operator values', async (
 		await close(origin.server);
 	});
 
-	const keys = PROXY_ENV_KEYS;
-	const saved = {};
-	for (const key of keys) {
-		saved[key] = process.env[key];
-		delete process.env[key];
-	}
-	t.after(() => {
-		for (const [key, value] of Object.entries(saved)) {
-			if (value === undefined) delete process.env[key];
-			else process.env[key] = value;
-		}
-	});
+	isolateProxyEnv(t);
 
 	const engine = createEngine(null);
 	t.after(() => engine.restore());
@@ -269,6 +273,22 @@ test('env export follows the switch and never clobbers operator values', async (
 	engine.apply({ enabled: false });
 	assert.equal(process.env.HTTP_PROXY, 'http://operator:1');
 	delete process.env.HTTP_PROXY;
+});
+
+test('clearing noProxy on a hot switch removes stale NO_PROXY env', (t) => {
+	isolateProxyEnv(t);
+
+	const engine = createEngine(null);
+	t.after(() => engine.restore());
+
+	engine.apply({ enabled: true, proxy: 'http://127.0.0.1:9', noProxy: ['localhost'] });
+	assert.equal(process.env.NO_PROXY, 'localhost');
+
+	// hot switch to an empty noProxy list — NO_PROXY must clear, not go stale
+	engine.apply({ enabled: true, proxy: 'http://127.0.0.1:9', noProxy: [] });
+	assert.ok(!('NO_PROXY' in process.env));
+	assert.ok(!('no_proxy' in process.env));
+	assert.equal(process.env.HTTP_PROXY, 'http://127.0.0.1:9');
 });
 
 test('invalid or incomplete config keeps traffic direct', async (t) => {
