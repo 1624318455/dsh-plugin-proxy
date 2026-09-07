@@ -53,7 +53,7 @@ In the target profile directory (`~/.config/dsh/profiles/<name>/`):
    ```json
    {
      "dependencies": {
-       "@tr1v3r/dsh-proxy": "^0.1.1"
+       "@tr1v3r/dsh-proxy": "^0.1.2"
      },
      "dsh": {
        "profile": {
