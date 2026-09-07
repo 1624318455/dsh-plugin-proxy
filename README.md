@@ -20,7 +20,10 @@ The plugin owns that slot:
 - `noProxy` rules → both paths route through one `RoutingDispatcher`, so HTTP
   and SOCKS share identical matcher semantics (undici-style: bare entries
   match the host and dot-boundary subdomains; `host:port` pins a port; `*`
-  bypasses everything; leading-dot / `*.` pure-suffix extensions)
+  bypasses everything; a leading dot or `*.` prefix is accepted as a synonym
+  of the bare entry). Ambient `NO_PROXY`/`HTTP_PROXY` env vars are
+  deliberately ignored by the dispatchers — exported env only steers child
+  processes, so in-process routing is fully determined by the settings section.
 
 With `exportEnv: true` (default) the switch also exports
 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` into the dsh process, so

@@ -17,7 +17,9 @@ dispatcher 槽位（`Symbol.for('undici.globalDispatcher.1')`）。本插件接�
   `socks5h://` / `socks://` 自动归一；域名在代理端远程解析）
 - `noProxy` 规则 → 两条路径统一走 `RoutingDispatcher` 分流，HTTP 与 SOCKS
   语义完全一致（undici 风格：裸条目匹配主机及点边界子域；`host:port` 锁定
-  端口；`*` 全部直连；另支持前导点 / `*.` 纯后缀扩展写法）
+  端口；`*` 全部直连；前导点 / `*.` 前缀视同裸条目等价写法）。dispatcher
+  刻意忽略环境变量里的 `NO_PROXY`/`HTTP_PROXY`——导出的 env 只引导子进程，
+  进程内路由完全由 settings 分节决定）
 
 `exportEnv: true`（默认）时，切换还会同步导出
 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`/`NO_PROXY` 到 dsh 进程环境——切换后

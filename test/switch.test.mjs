@@ -316,3 +316,120 @@ test('restore returns the original global dispatcher', (t) => {
 	engine.restore();
 	assert.equal(getGlobalDispatcher(), before);
 });
+
+test('IPv6 noProxy rules bypass on the real request path', async (t) => {
+	const proxy = await startHttpProxy();
+	const origin = http.createServer((req, res) => {
+		res.writeHead(200);
+		res.end('origin-v6');
+	});
+	await new Promise((resolve) => origin.listen(0, '::1', resolve));
+	t.after(async () => {
+		await close(proxy.server);
+		await close(origin);
+	});
+
+	const engine = createEngine(null);
+	t.after(() => engine.restore());
+
+	const url = `http://[::1]:${origin.address().port}/v6`;
+	// bracketed rule form
+	engine.apply({ enabled: true, proxy: proxy.url, noProxy: ['[::1]'], exportEnv: false });
+	assert.equal(await (await fetch(url)).text(), 'origin-v6');
+	assert.equal(proxy.seen.length, 0, 'bracketed [::1] rule must bypass');
+	// bare rule form
+	engine.apply({ enabled: true, proxy: proxy.url, noProxy: ['::1'], exportEnv: false });
+	assert.equal(await (await fetch(url)).text(), 'origin-v6');
+	assert.equal(proxy.seen.length, 0, 'bare ::1 rule must bypass');
+});
+
+test('ambient NO_PROXY env never steers the in-process routing', async (t) => {
+	const origin = await startOrigin();
+	const proxy = await startHttpProxy();
+	t.after(async () => {
+		await close(proxy.server);
+		await close(origin.server);
+	});
+
+	const saved = { NO_PROXY: process.env.NO_PROXY, no_proxy: process.env.no_proxy };
+	process.env.NO_PROXY = '127.0.0.1';
+	delete process.env.no_proxy;
+	t.after(() => {
+		for (const [key, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[key];
+			else process.env[key] = value;
+		}
+	});
+
+	const engine = createEngine(null);
+	t.after(() => engine.restore());
+
+	// With plugin-level noProxy rules: routing must follow the section, not env.
+	engine.apply({ enabled: true, proxy: proxy.url, noProxy: ['example.invalid'], exportEnv: false });
+	assert.equal((await (await fetch(origin.url)).json()).via, 'origin');
+	assert.equal(proxy.seen.length, 1, 'ambient NO_PROXY must not bypass the wrapped HTTP leg');
+
+	// With no plugin-level rules (unwrapped agent): still immune to env.
+	engine.apply({ enabled: true, proxy: proxy.url, exportEnv: false });
+	proxy.seen.length = 0;
+	assert.equal((await (await fetch(origin.url)).json()).via, 'origin');
+	assert.equal(proxy.seen.length, 1, 'unwrapped HTTP leg must also ignore ambient NO_PROXY');
+});
+
+test('turning exportEnv off on a hot switch clears exported env', (t) => {
+	isolateProxyEnv(t);
+
+	const engine = createEngine(null);
+	t.after(() => engine.restore());
+
+	engine.apply({ enabled: true, proxy: 'http://127.0.0.1:9', exportEnv: true });
+	assert.equal(process.env.HTTP_PROXY, 'http://127.0.0.1:9');
+
+	// still enabled, but env export withdrawn → stale values must go
+	engine.apply({ enabled: true, proxy: 'http://127.0.0.1:9', exportEnv: false });
+	assert.ok(!('HTTP_PROXY' in process.env));
+	assert.ok(!('ALL_PROXY' in process.env));
+});
+
+test('operator values set mid-session are adopted, not clobbered', (t) => {
+	isolateProxyEnv(t);
+
+	const engine = createEngine(null);
+	t.after(() => engine.restore());
+
+	engine.apply({ enabled: true, proxy: 'http://first:9' });
+	assert.equal(process.env.HTTP_PROXY, 'http://first:9');
+
+	// operator overrides our exported value mid-session
+	process.env.HTTP_PROXY = 'http://operator-mid:1';
+
+	// hot switch to another proxy must not clobber the operator value
+	engine.apply({ enabled: true, proxy: 'http://second:9' });
+	assert.equal(process.env.HTTP_PROXY, 'http://operator-mid:1');
+
+	// disabling restores the operator value, not ours
+	engine.apply({ enabled: false });
+	assert.equal(process.env.HTTP_PROXY, 'http://operator-mid:1');
+	delete process.env.HTTP_PROXY;
+});
+
+test('proxy URL credentials are redacted in logs', () => {
+	const messages = [];
+	const engine = createEngine({
+		info: (message) => messages.push(message),
+		error: (message) => messages.push(message)
+	});
+	try {
+		engine.apply({ enabled: true, proxy: 'socks5://alice:s3cret@127.0.0.1:1080', exportEnv: false });
+		assert.equal(messages.length, 1);
+		assert.match(messages[0], /socks5:\/\/\*\*\*@127\.0\.0\.1:1080/);
+		assert.ok(!messages[0].includes('alice'));
+		assert.ok(!messages[0].includes('s3cret'));
+	} finally {
+		engine.restore();
+	}
+});
+
+test('SOCKS proxy URLs with credentials construct a SOCKS5 agent', () => {
+	assert.ok(buildDispatcher({ enabled: true, proxy: 'socks5://alice:s3cret@127.0.0.1:1080' }) instanceof Socks5ProxyAgent);
+});
