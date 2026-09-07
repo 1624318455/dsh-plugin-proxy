@@ -1,4 +1,4 @@
-# dsh-live-proxy — runtime-switchable outbound proxy for DSH
+# dsh-proxy — runtime-switchable outbound proxy for DSH
 
 **中文说明见 [README.zh.md](README.zh.md)。**
 
@@ -52,7 +52,7 @@ In the target profile directory (`~/.config/dsh/profiles/<name>/`):
    ```json
    {
      "dependencies": {
-       "@tr1v3r/dsh-proxy": "^0.1.0"
+       "@tr1v3r/dsh-proxy": "^0.1.1"
      },
      "dsh": {
        "profile": {
