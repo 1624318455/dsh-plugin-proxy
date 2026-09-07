@@ -95,9 +95,9 @@ const PROXY_B = `socks5://127.0.0.1:${socksProxy.address().port}`;
 /* --------------------------------------------- settings.yaml → engine */
 
 /**
- * Demo-only parser for the three keys this script writes (the real plugin
- * parses the file with the dsh settings seam; that machinery is not imported
- * here to keep the demo dependency-free).
+ * Demo-only parser for the keys this script writes (the real plugin parses
+ * the file with the dsh settings seam; that machinery is not imported here
+ * to keep the demo dependency-free).
  */
 function parseDemoSection(text) {
 	const section = {};
@@ -108,8 +108,11 @@ function parseDemoSection(text) {
 			continue;
 		}
 		if (!inSection) continue;
-		const match = rawLine.match(/^\s+(enabled|proxy):\s*(\S+)\s*$/);
-		if (match) section[match[1]] = match[1] === 'enabled' ? match[2] === 'true' : match[2];
+		const match = rawLine.match(/^\s+(mode|enabled|proxy):\s*(\S+)\s*$/);
+		if (!match) continue;
+		if (match[1] === 'mode') section.mode = match[2];
+		if (match[1] === 'enabled') section.enabled = match[2] === 'true';
+		if (match[1] === 'proxy') section.proxy = match[2];
 	}
 	return section;
 }
@@ -119,7 +122,12 @@ const engine = createEngine(console);
 const applyFrom = (text) => {
 	const section = parseDemoSection(text);
 	writeFileSync(SETTINGS, text);
-	engine.apply({ enabled: section.enabled ?? false, proxy: section.proxy, exportEnv: false });
+	engine.apply({
+		mode: section.mode,
+		enabled: section.enabled,
+		proxy: section.proxy,
+		exportEnv: false
+	});
 };
 
 /* ------------------------------------------------------------ narration */
@@ -141,24 +149,30 @@ function banner(line) {
 /* --------------------------------------------------------------- scene */
 
 log('▲ dsh-proxy demo — globalThis.fetch rerouted by editing settings.yaml');
-banner('── settings.yaml: enabled: false ──────────────────────────────');
-applyFrom('dsh-proxy:\n  enabled: false\n');
+banner('── settings.yaml: mode: direct ────────────────────────────────');
+applyFrom('dsh-proxy:\n  mode: direct\n');
 await probe();
 
-banner('── settings.yaml: proxy: http://127.0.0.1:' + httpProxy.address().port + ' (HTTP CONNECT) ──');
-applyFrom(`dsh-proxy:\n  enabled: true\n  proxy: ${PROXY_A}\n`);
+banner(`── settings.yaml: mode: manual, proxy: http://…:${httpProxy.address().port} ──`);
+applyFrom(`dsh-proxy:\n  mode: manual\n  proxy: ${PROXY_A}\n`);
 await probe();
 
-banner('── settings.yaml: proxy: socks5://127.0.0.1:' + socksProxy.address().port + ' (SOCKS5) ──');
-applyFrom(`dsh-proxy:\n  enabled: true\n  proxy: ${PROXY_B}\n`);
+banner(`── settings.yaml: mode: manual, proxy: socks5://…:${socksProxy.address().port} ──`);
+applyFrom(`dsh-proxy:\n  mode: manual\n  proxy: ${PROXY_B}\n`);
 await probe();
 
-banner('── settings.yaml: enabled: false ──────────────────────────────');
-applyFrom('dsh-proxy:\n  enabled: false\n');
+banner(`── settings.yaml: mode: system  (env HTTP_PROXY → HTTP proxy) ──`);
+process.env.HTTP_PROXY = PROXY_A;
+applyFrom('dsh-proxy:\n  mode: system\n');
+await probe();
+delete process.env.HTTP_PROXY;
+
+banner('── settings.yaml: mode: direct ────────────────────────────────');
+applyFrom('dsh-proxy:\n  mode: direct\n');
 await probe();
 
 banner('───────────────────────────────────────────────────────────────');
-log(`✓ ${httpSeen.length} proxied via HTTP · ${socksSeen.length} proxied via SOCKS5 · 0 restarts`);
+log(`✓ ${httpSeen.length} requests via HTTP proxy · ${socksSeen.length} via SOCKS5 · 0 restarts`);
 log('  edit the section, save — every outbound request follows instantly.');
 
 engine.restore();
