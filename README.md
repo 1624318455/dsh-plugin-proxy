@@ -4,6 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/@tr1v3r/dsh-proxy.svg)](https://www.npmjs.com/package/@tr1v3r/dsh-proxy)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![DSH Market](https://raw.githubusercontent.com/2BingLing/dsh-market/master/assets/readme/badge-listed-en.svg)](https://dsh.market/)
 
 ![demo: editing settings.yaml reroutes every outbound request instantly](docs/assets/proxy-switch-demo.gif)
 
