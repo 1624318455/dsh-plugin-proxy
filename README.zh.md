@@ -2,7 +2,6 @@
 
 **English readme: [README.md](README.md)。**
 
-[![npm](https://img.shields.io/npm/v/@1624318455/dsh-plugin-proxy.svg)](https://www.npmjs.com/package/@1624318455/dsh-plugin-proxy)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH Market](https://raw.githubusercontent.com/2BingLing/dsh-market/master/assets/readme/badge-listed-zh.svg)](https://dsh.market/)
 
