@@ -109,6 +109,12 @@ dsh-proxy: direct (mode: direct)
 （日志中代理 URL 的用户名密码会打码。`system` 模式只读环境/系统代理，
 不会回写这些环境变量。）
 
+### 网页设置卡片
+
+0.1.3 起同一分节可在 DSH 网页 **设置 → 插件 → 插件配置** 里直接改
+（卡片“出站代理”），绑的是 `dsh-proxy` settings namespace，和改
+`settings.yaml` 完全等价，保存即时生效，无需重启。
+
 ## 覆盖范围
 
 | 流量 | 是否代理 |
@@ -130,6 +136,20 @@ agent 上游目前标注 experimental。
 npm install
 npm test                      # 单测 + 本地 e2e：HTTP 代理、SOCKS5、noProxy、热切换、env
 node scripts/boot-probe.mjs   # boot 真实 DSH 插件树，热翻转 settings.yaml 验证
+```
+
+## Fork 维护
+
+本 fork（[1624318455/dsh-proxy](https://github.com/1624318455/dsh-proxy)）
+在上游基础上加：
+
+- 网页设置卡片（`lib/client.js`，手写 ModuleLoader 包，无构建步骤），
+  中英双语。
+
+从 fork 安装：
+
+```sh
+dsh plugin --profile <name> add github:1624318455/dsh-proxy
 ```
 
 ## 许可

@@ -118,6 +118,13 @@ dsh-proxy: direct (mode: direct)
 (Userinfo in the proxy URL is redacted in logs. `system` mode follows the
 ambient env/OS proxy, so it never writes those env vars itself.)
 
+### Web settings card
+
+Since 0.1.3 the same section is editable in the DSH web UI under
+**Settings → Plugins → Plugin configuration** (card "Outbound proxy").
+It binds the `dsh-proxy` settings namespace, so edits apply live exactly
+like saving `settings.yaml` — no restart either way.
+
 ## What is covered / not covered
 
 | Traffic | Routed? |
@@ -140,6 +147,21 @@ experimental upstream.
 npm install
 npm test                      # unit + local e2e: HTTP proxy, SOCKS5, noProxy, hot-switch, env
 node scripts/boot-probe.mjs   # boots a real DSH tree and hot-flips settings.yaml
+```
+
+## Fork maintenance
+
+This fork ([1624318455/dsh-proxy](https://github.com/1624318455/dsh-proxy))
+tracks upstream plus:
+
+- Web settings card (`lib/client.js`, hand-built ModuleLoader bundle, no
+  build step) for the `dsh-proxy` namespace.
+- Bilingual card copy (zh/en) via the `locale` service.
+
+Install from the fork:
+
+```sh
+dsh plugin --profile <name> add github:1624318455/dsh-proxy
 ```
 
 ## License
