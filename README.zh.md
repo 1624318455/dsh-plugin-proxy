@@ -2,7 +2,6 @@
 
 **English readme: [README.md](README.md)。**
 
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH Market](https://raw.githubusercontent.com/2BingLing/dsh-market/master/assets/readme/badge-listed-zh.svg)](https://dsh.market/)
 
 <div>

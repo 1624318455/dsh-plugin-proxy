@@ -2,7 +2,6 @@
 
 **中文说明见 [README.zh.md](README.zh.md)。**
 
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH Market](https://raw.githubusercontent.com/2BingLing/dsh-market/master/assets/readme/badge-listed-en.svg)](https://dsh.market/)
 
 <div>
