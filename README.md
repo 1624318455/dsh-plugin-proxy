@@ -1,14 +1,17 @@
-# dsh-proxy — runtime-switchable outbound proxy for DSH
+# dsh-plugin-proxy — runtime-switchable outbound proxy for DSH
+
+> Maintained fork of [@tr1v3r/dsh-proxy](https://github.com/tr1v3r/dsh-proxy)
+> (MIT © tr1v3r): tracks upstream plus a web settings card and bilingual copy.
 
 **中文说明见 [README.zh.md](README.zh.md)。**
 
-[![npm](https://img.shields.io/npm/v/@tr1v3r/dsh-proxy.svg)](https://www.npmjs.com/package/@tr1v3r/dsh-proxy)
+[![npm](https://img.shields.io/npm/v/@1624318455/dsh-plugin-proxy.svg)](https://www.npmjs.com/package/@1624318455/dsh-plugin-proxy)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH Market](https://raw.githubusercontent.com/2BingLing/dsh-market/master/assets/readme/badge-listed-en.svg)](https://dsh.market/)
 
 ![demo: editing settings.yaml reroutes every outbound request instantly](docs/assets/proxy-switch-demo.gif)
 
-`@tr1v3r/dsh-proxy` is a DeepSeek Harness plugin that routes **every
+`@1624318455/dsh-plugin-proxy` is a DeepSeek Harness plugin that routes **every
 in-process outbound request** — LLM providers, `web_search` / `web_fetch`,
 streamable-http MCP — through an HTTP(S) CONNECT or SOCKS5 proxy, and lets
 you **flip the proxy on, off, or to another server at runtime**, with zero
@@ -54,11 +57,11 @@ In the target profile directory (`~/.config/dsh/profiles/<name>/`):
    ```json
    {
      "dependencies": {
-       "@tr1v3r/dsh-proxy": "^0.1.2"
+       "@1624318455/dsh-plugin-proxy": "^0.1.2"
      },
      "dsh": {
        "profile": {
-         "bundles": ["@deepseek-ai/dsh-base", "@tr1v3r/dsh-proxy"]
+         "bundles": ["@deepseek-ai/dsh-base", "@1624318455/dsh-plugin-proxy"]
        }
      }
    }

@@ -1,6 +1,6 @@
 /**
  * Real-runtime hot-switch probe. Boots an actual DSH plugin tree (dsh-base
- * + @tr1v3r/dsh-proxy) from a throwaway DSH_HOME, then flips the
+ * + @1624318455/dsh-plugin-proxy) from a throwaway DSH_HOME, then flips the
  * `dsh-proxy:` settings section in settings.yaml and verifies that the
  * global dispatcher, child-process env, and live fetch routing follow along
  * without a restart.
@@ -64,7 +64,7 @@ writeFileSync(join(profileDir, 'package.json'), JSON.stringify({
 	private: true,
 	dsh: {
 		profile: {
-			bundles: ['@deepseek-ai/dsh-base', '@tr1v3r/dsh-proxy'],
+			bundles: ['@deepseek-ai/dsh-base', '@1624318455/dsh-plugin-proxy'],
 			patchReload: 'startup'
 		}
 	}
@@ -73,8 +73,8 @@ writeFileSync(join(profileDir, 'package.json'), JSON.stringify({
 writeFileSync(join(profileDir, 'cordis.patch.yml'), '[]\n');
 
 // Minimal node_modules: the plugin package plus its runtime deps.
-mkdirSync(join(profileDir, 'node_modules', '@tr1v3r'), { recursive: true });
-cpSync(PLUGIN_DIR, join(profileDir, 'node_modules', '@tr1v3r', 'dsh-proxy'), {
+mkdirSync(join(profileDir, 'node_modules', '@1624318455'), { recursive: true });
+cpSync(PLUGIN_DIR, join(profileDir, 'node_modules', '@1624318455', 'dsh-plugin-proxy'), {
 	recursive: true,
 	filter: (src) => !src.includes(`${PLUGIN_DIR}/.git`) && !src.includes('node_modules')
 });

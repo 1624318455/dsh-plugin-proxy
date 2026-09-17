@@ -1,7 +1,7 @@
-# @tr1v3r/dsh-proxy bundle patch.
+# @1624318455/dsh-plugin-proxy bundle patch.
 # Mounts the host entry with schema defaults (proxy off). Switching happens
 # at runtime through the `dsh-proxy:` section of $DSH_HOME/settings.yaml.
 
 - insert:
     - id: dsh-proxy
-      name: '@tr1v3r/dsh-proxy'
+      name: '@1624318455/dsh-plugin-proxy'

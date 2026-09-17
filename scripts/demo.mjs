@@ -1,5 +1,5 @@
 /**
- * Terminal demo for @tr1v3r/dsh-proxy — real dispatcher switching.
+ * Terminal demo for @1624318455/dsh-plugin-proxy — real dispatcher switching.
  *
  * Boots a local origin server, an HTTP proxy, and a SOCKS5 proxy, then walks
  * through settings.yaml edits, applying to the plugin's own createEngine the

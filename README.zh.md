@@ -1,14 +1,17 @@
-# dsh-proxy — DSH 运行时可切换出站代理
+# dsh-plugin-proxy — DSH 运行时可切换出站代理
+
+> 本项目是 [@tr1v3r/dsh-proxy](https://github.com/tr1v3r/dsh-proxy)（MIT © tr1v3r）
+> 的维护分支：跟踪上游，另加网页设置卡片与中英双语。
 
 **English readme: [README.md](README.md)。**
 
-[![npm](https://img.shields.io/npm/v/@tr1v3r/dsh-proxy.svg)](https://www.npmjs.com/package/@tr1v3r/dsh-proxy)
+[![npm](https://img.shields.io/npm/v/@1624318455/dsh-plugin-proxy.svg)](https://www.npmjs.com/package/@1624318455/dsh-plugin-proxy)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH Market](https://raw.githubusercontent.com/2BingLing/dsh-market/master/assets/readme/badge-listed-zh.svg)](https://dsh.market/)
 
 ![演示：编辑 settings.yaml 即时改写全部出站路由](docs/assets/proxy-switch-demo.gif)
 
-`@tr1v3r/dsh-proxy` 是 DeepSeek Harness 插件，把进程内**所有出站请求**——
+`@1624318455/dsh-plugin-proxy` 是 DeepSeek Harness 插件，把进程内**所有出站请求**——
 LLM 提供方、`web_search` / `web_fetch`、streamable-http MCP——经由
 HTTP(S) CONNECT 或 SOCKS5 代理转发，并且支持**运行时随时开关、随时换代理**：
 只需编辑 `$DSH_HOME/settings.yaml` 的一个分节（watcher 热加载），全程零重启。
@@ -48,11 +51,11 @@ dispatcher 槽位（`Symbol.for('undici.globalDispatcher.1')`）。本插件接�
    ```json
    {
      "dependencies": {
-       "@tr1v3r/dsh-proxy": "^0.1.2"
+       "@1624318455/dsh-plugin-proxy": "^0.1.2"
      },
      "dsh": {
        "profile": {
-         "bundles": ["@deepseek-ai/dsh-base", "@tr1v3r/dsh-proxy"]
+         "bundles": ["@deepseek-ai/dsh-base", "@1624318455/dsh-plugin-proxy"]
        }
      }
    }
