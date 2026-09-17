@@ -1,6 +1,6 @@
 /**
  * Real-runtime hot-switch probe. Boots an actual DSH plugin tree (dsh-base
- * + @1624318455/dsh-plugin-proxy) from a throwaway DSH_HOME, then flips the
+ * + @memef1f1y/dsh-plugin-proxy) from a throwaway DSH_HOME, then flips the
  * `dsh-proxy:` settings section in settings.yaml and verifies that the
  * global dispatcher, child-process env, and live fetch routing follow along
  * without a restart.
@@ -64,7 +64,7 @@ writeFileSync(join(profileDir, 'package.json'), JSON.stringify({
 	private: true,
 	dsh: {
 		profile: {
-			bundles: ['@deepseek-ai/dsh-base', '@1624318455/dsh-plugin-proxy'],
+			bundles: ['@deepseek-ai/dsh-base', '@memef1f1y/dsh-plugin-proxy'],
 			patchReload: 'startup'
 		}
 	}

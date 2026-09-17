@@ -15,7 +15,7 @@
 
 ![演示：编辑 settings.yaml 即时改写全部出站路由](docs/assets/proxy-switch-demo.gif)
 
-`@1624318455/dsh-plugin-proxy` 是 DeepSeek Harness 插件，把进程内**所有出站请求**——
+`@memef1f1y/dsh-plugin-proxy` 是 DeepSeek Harness 插件，把进程内**所有出站请求**——
 LLM 提供方、`web_search` / `web_fetch`、streamable-http MCP——经由
 HTTP(S) CONNECT 或 SOCKS5 代理转发，并且支持**运行时随时开关、随时换代理**：
 编辑 `$DSH_HOME/settings.yaml` 的一个分节或网页设置卡片（watcher 热加载），全程零重启。
@@ -52,7 +52,7 @@ dsh plugin --profile <name> add github:1624318455/dsh-plugin-proxy
 **从 npm 安装**：
 
 ```sh
-dsh plugin --profile <name> add @1624318455/dsh-plugin-proxy
+dsh plugin --profile <name> add @memef1f1y/dsh-plugin-proxy
 ```
 
 **验证**：重启一次 `dsh web` 挂载插件，之后翻 `mode` 或打开设置卡片，

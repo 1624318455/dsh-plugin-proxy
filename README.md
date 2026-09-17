@@ -15,7 +15,7 @@
 
 ![demo: editing settings.yaml reroutes every outbound request instantly](docs/assets/proxy-switch-demo.gif)
 
-`@1624318455/dsh-plugin-proxy` is a DeepSeek Harness plugin that routes **every
+`@memef1f1y/dsh-plugin-proxy` is a DeepSeek Harness plugin that routes **every
 in-process outbound request** — LLM providers, `web_search` / `web_fetch`,
 streamable-http MCP — through an HTTP(S) CONNECT or SOCKS5 proxy, and lets
 you **flip the proxy on, off, or to another server at runtime**, with zero
@@ -56,7 +56,7 @@ dsh plugin --profile <name> add github:1624318455/dsh-plugin-proxy
 **From npm**:
 
 ```sh
-dsh plugin --profile <name> add @1624318455/dsh-plugin-proxy
+dsh plugin --profile <name> add @memef1f1y/dsh-plugin-proxy
 ```
 
 **Verify**: restart `dsh web` once, then open the settings card or flip
