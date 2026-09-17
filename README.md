@@ -6,6 +6,15 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH Market](https://raw.githubusercontent.com/2BingLing/dsh-market/master/assets/readme/badge-listed-en.svg)](https://dsh.market/)
 
+<div>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="license"></a>
+  <a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin"><img src="https://awesome-dsh-plugin.com/badge.svg" alt="Awesome"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-20%2B-blue" alt="node"></a>
+  <a href="test/switch.test.mjs"><img src="https://img.shields.io/badge/tests-26%20passed-success" alt="tests"></a>
+  <a href="https://github.com/1624318455/dsh-plugin-proxy"><img src="https://img.shields.io/github/stars/1624318455/dsh-plugin-proxy" alt="stars"></a>
+  <a href="https://github.com/1624318455/dsh-plugin-proxy/commits/master"><img src="https://img.shields.io/github/last-commit/1624318455/dsh-plugin-proxy" alt="last commit"></a>
+</div>
+
 ![demo: editing settings.yaml reroutes every outbound request instantly](docs/assets/proxy-switch-demo.gif)
 
 `@1624318455/dsh-plugin-proxy` is a DeepSeek Harness plugin that routes **every
